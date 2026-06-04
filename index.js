@@ -25,6 +25,19 @@ async function run() {
     await client.connect();
 
     const jobCollections = client.db("hirehub").collection("jobs");
+    const companyCollections = client.db("hirehub").collection("company");
+
+    app.get("/api/jobs", async (req, res) => {
+      const query = {};
+      if (req.query.companyId) {
+        query.companyId = req.query.companyId;
+      }
+      if (req.query.status) {
+        query.status = req.query.status;
+      }
+      const result = await jobCollections.find(query).toArray();
+      res.send(result);
+    });
 
     app.post("/api/jobs", async (req, res) => {
       const job = req.body;
