@@ -1,5 +1,5 @@
 const express = require("express");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cors = require("cors");
 require("dotenv").config();
 const app = express();
@@ -26,6 +26,7 @@ async function run() {
 
     const jobCollections = client.db("hirehub").collection("jobs");
     const companyCollections = client.db("hirehub").collection("company");
+    const userCollections = client.db("hirehub").collection("user");
 
     app.get("/api/jobs", async (req, res) => {
       const query = {};
@@ -39,9 +40,43 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/api/jobs/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {
+        _id: new ObjectId(id),
+      };
+      const result = await jobCollections.findOne(query);
+      res.send(result);
+    });
+
     app.post("/api/jobs", async (req, res) => {
       const job = req.body;
-      const result = await jobCollections.insertOne(job);
+      const newJob = {
+        ...job,
+        createdAt: new Date(),
+      };
+      const result = await jobCollections.insertOne(newJob);
+      res.send(result);
+    });
+
+    // Company related API's
+    app.get("/api/my/companies", async (req, res) => {
+      const query = {};
+
+      if (req.query.recruiterId) {
+        query.recruiterId = req.query.recruiterId;
+      }
+      const result = await companyCollections.findOne(query);
+      res.send(result || {});
+    });
+
+    app.post("/api/companies", async (req, res) => {
+      const company = req.body;
+      const newCompany = {
+        ...company,
+        createdAt: new Date(),
+      };
+      const result = await companyCollections.insertOne(newCompany);
       res.send(result);
     });
 
