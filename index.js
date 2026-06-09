@@ -27,6 +27,9 @@ async function run() {
     const jobCollections = client.db("hirehub").collection("jobs");
     const companyCollections = client.db("hirehub").collection("company");
     const userCollections = client.db("hirehub").collection("user");
+    const applicationsCollections = client
+      .db("hirehub")
+      .collection("applications");
 
     app.get("/api/jobs", async (req, res) => {
       const query = {};
@@ -56,6 +59,29 @@ async function run() {
         createdAt: new Date(),
       };
       const result = await jobCollections.insertOne(newJob);
+      res.send(result);
+    });
+
+    // Applications related api's
+    app.get("/api/applications", async (req, res) => {
+      const query = {};
+      if (req.query.applicantId) {
+        query.applicantId = req.query.applicantId;
+      }
+      if (req.query.jobId) {
+        query.jobId = req.query.jobId;
+      }
+      const result = await applicationsCollections.find(query).toArray();
+      res.send(result);
+    });
+
+    app.post("/api/applications", async (req, res) => {
+      const application = req.body;
+      const newApplication = {
+        ...application,
+        createdAt: new Date(),
+      };
+      const result = await applicationsCollections.insertOne(newApplication);
       res.send(result);
     });
 
