@@ -30,6 +30,10 @@ async function run() {
     const applicationsCollections = client
       .db("hirehub")
       .collection("applications");
+    const planCollections = client.db("hirehub").collection("plans");
+    const subscriptionCollections = client
+      .db("hirehub")
+      .collection("subscriptions");
 
     app.get("/api/jobs", async (req, res) => {
       const query = {};
@@ -104,6 +108,39 @@ async function run() {
       };
       const result = await companyCollections.insertOne(newCompany);
       res.send(result);
+    });
+
+    // Plans
+    app.get("/api/plans", async (req, res) => {
+      const query = {};
+      if (req.query.plan_id) {
+        query.planId = req.query.plan_id;
+      }
+      const plan = await planCollections.findOne(query);
+      res.send(plan);
+    });
+
+    // Subscriptions
+    app.post("/api/subscriptions", async (req, res) => {
+      const data = req.body;
+      const subsInfo = {
+        ...data,
+        createdAt: new Date(),
+      };
+      const result = await subscriptionCollections.insertOne(subsInfo);
+
+      //   /Update the user plan info
+      const folter = { email: data.email };
+      const updateDocument = {
+        $set: {
+          plan: data.planId,
+        },
+      };
+      const upateResult = await userCollections.updateOne(
+        folter,
+        updateDocument,
+      );
+      res.send(upateResult);
     });
 
     // Send a ping to confirm a successful connection
