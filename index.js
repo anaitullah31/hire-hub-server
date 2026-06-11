@@ -90,6 +90,11 @@ async function run() {
     });
 
     // Company related API's
+    app.get("/api/companies", async (req, res) => {
+      const result = await companyCollections.find().toArray();
+      res.send(result);
+    });
+
     app.get("/api/my/companies", async (req, res) => {
       const query = {};
 
@@ -110,6 +115,20 @@ async function run() {
       res.send(result);
     });
 
+    app.patch("/api/companies/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedComany = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          status: updatedComany.status,
+        },
+      };
+      const result = await companyCollections.updateOne(filter, updatedDoc);
+      res.send(result);
+    });
+
+    
     // Plans
     app.get("/api/plans", async (req, res) => {
       const query = {};
