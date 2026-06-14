@@ -1,6 +1,7 @@
 const express = require("express");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cors = require("cors");
+const { use } = require("react");
 require("dotenv").config();
 const app = express();
 const port = 5000;
@@ -34,6 +35,36 @@ async function run() {
     const subscriptionCollections = client
       .db("hirehub")
       .collection("subscriptions");
+    const sessionCollections = client.db("hirehub").collection("session");
+
+    const verifyToken = async (req, res, next) => {
+      const authHeader = req.headers?.authorization;
+      if (!authHeader) {
+        return req.status(401).send({ message: "unauthorized access" });
+      }
+      const token = authHeader.split(" ")[1];
+
+      if (!token) {
+        return req.status(401).send({ message: "unauthorized access" });
+      }
+      const query = { token: token };
+      const session = await sessionCollections.findOne(query);
+      const userId = session.userId;
+
+      const userQuery = {
+        _id: userId,
+      };
+      const user = await userCollections.findOne(userQuery);
+      req.user = user;
+      next();
+    };
+
+    const verifySeeker = async (req, res, next) => {
+      if (req?.user.role !== "job-seaker") {
+        return req.status(403).send({ message: "forbidden access" });
+      }
+      next();
+    };
 
     app.get("/api/jobs", async (req, res) => {
       const query = {};
@@ -90,7 +121,7 @@ async function run() {
     });
 
     // Company related API's
-    app.get("/api/companies", async (req, res) => {
+    app.get("/api/companies", verifyToken, async (req, res) => {
       const result = await companyCollections.find().toArray();
       res.send(result);
     });
@@ -115,7 +146,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/api/companies/:id", async (req, res) => {
+    app.patch("/api/companies/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const updatedComany = req.body;
       const filter = { _id: new ObjectId(id) };
@@ -128,7 +159,6 @@ async function run() {
       res.send(result);
     });
 
-    
     // Plans
     app.get("/api/plans", async (req, res) => {
       const query = {};
